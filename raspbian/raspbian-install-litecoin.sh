@@ -53,7 +53,7 @@ echo "addnode=$selectedarray_two" >> $LITECOIND_CONF_FILE
 echo "Installing dependencies required for building Litecoin"
 sudo apt-get install autoconf libtool libssl-dev libboost-all-dev libminiupnpc-dev -y
 sudo apt-get install qt4-dev-tools libprotobuf-dev protobuf-compiler libqrencode-dev -y
-sudo apt-get install git -y
+sudo apt-get install git libevent-dev -y
 
 #setup berkleydb and other build dependencies
 echo "Setting up berkleydb"
