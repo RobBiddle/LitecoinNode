@@ -86,3 +86,8 @@ RASPBIAN_SYSTEMD_CONF_FILE="litecoind.service" #name of the litecoind systemd sc
 #define download locations
 RASPBIAN_BASE="$SCRIPT_DL_URL/$DIST" #base directory for raspbian script files
 RASPBIAN_SYSTEMD_DL_URL="$RASPBIAN_BASE/litecoind.service" #the download location of the systemd.conf file for litecoind
+
+# Temporarily increase swap space on Raspberry Pi to allow for litecoind build
+# Value tested on RPi 3 hardware (1GB RAM)
+DESIRED_SWAP_SIZE_IN_KB="640000"
+ORIGINAL_SWAP_SIZE_IN_KB=$(sudo cat /proc/swaps | awk '{print $3}' | grep -E '[0-9]')

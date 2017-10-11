@@ -63,6 +63,16 @@ cd db-4.8.30.NC/build_unix; ../dist/configure --enable-cxx
 make -j2
 sudo make install
 
+# Temporarily increase swap space to allow for litecoind build
+if [ "$ORIGINAL_SWAP_SIZE_IN_KB" -lt "$DESIRED_SWAP_SIZE_IN_KB" ]
+then
+    TEMP_SWAP_SIZE_IN_MB=$((("$DESIRED_SWAP_SIZE_IN_KB" - "$ORIGINAL_SWAP_SIZE_IN_KB") / "1000"))
+    sudo fallocate -l "$TEMP_SWAP_SIZE_IN_MB"M /tempswapfile
+    sudo chmod 600 /tempswapfile
+    sudo mkswap /tempswapfile
+    sudo swapon /tempswapfile
+fi
+
 #build litecoind
 echo "Building Litecoin"
 cd ..
@@ -73,10 +83,30 @@ cd litecoin/
 make -j2
 sudo make install
 
+# Remove Temporary swap space
+if [ "$ORIGINAL_SWAP_SIZE_IN_KB" -lt "$DESIRED_SWAP_SIZE_IN_KB" ]
+then
+    sudo swapoff /tempswapfile
+    sudo rm -f /tempswapfile
+fi
+
 #Move the already built litecoind binary
 echo "Moving litecoind to $LITECOIND_BIN_DIR"
-cp -f -v litecoind $LITECOIND_BIN_DIR
-cp -f -v litecoin-cli $LITECOIND_BIN_DIR
+cp -f -v $(which litecoind) $LITECOIND_BIN_DIR
+cp -f -v $(which litecoin-cli) $LITECOIND_BIN_DIR
+
+#fix permissions home directory
+chmod -R 0755 $LITECOIND_HOME_DIR
+chown -R $LITECOIND_USER:$LITECOIND_GROUP $LITECOIND_HOME_DIR
+#fix permissions data directory
+chmod -R 0700 $LITECOIND_DATA_DIR
+chown -R $LITECOIND_USER:$LITECOIND_GROUP $LITECOIND_DATA_DIR
+#fix permissions conf file
+chmod -R 0600 $LITECOIND_CONF_FILE
+chown -R $LITECOIND_USER:$LITECOIND_GROUP $LITECOIND_CONF_FILE
+#fix permissions bin directory
+chmod -R 0700 $LITECOIND_BIN_DIR
+chown -R $LITECOIND_USER:$LITECOIND_GROUP $LITECOIND_BIN_DIR
 
 #add litecoind to systemd so it starts on system boot
 echo "Adding Litecoind systemd script to make it start on system boot"
@@ -90,8 +120,8 @@ read -r -p "Do you want to download the bootstrap.dat file? If you choose yes yo
 echo
 if [[ $ANSWER =~ ^([yY])$ ]]
 then
-	echo "Downloading bootstrap.dat, this can take a moment"
-	wget --progress=bar:force $BOOTSTRAP_DL_LOCATION -P $HOME/.litecoin
+    echo "Downloading bootstrap.dat, this can take a moment"
+    wget --progress=bar:force $BOOTSTRAP_DL_LOCATION -P $HOME/.litecoin
 fi
 
 #start litecoin daemon
